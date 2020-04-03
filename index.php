@@ -1,93 +1,100 @@
-<?php
-$host = '127.0.0.1';
-$db   = 'netland';
-$user = 'root';
-$pass = '';
-$charset = 'utf8mb4';
+<!DOCTYPE html>
+<html lang="en">
 
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+<head>
+    <meta charset="UTF-8">
+    <title> Netland CP</title>
+</head>
 
-$options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-];
+<body>
+    <?php
+    function select($query)
+    {
+        $host = 'localhost';
+        $db   = 'netland';
+        $user = 'root';
+        $pass = '';
+        $charset = 'utf8mb4';
 
-try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (\PDOException $e) {
-    throw new \PDOException($e->getMessage(), (int)$e->getCode());
-}
+        $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+        $options = [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ];
 
-if (isset($_GET['seriesOrder'])) {
-    $order = $_GET['seriesOrder'];
+        try {
+            $pdo = new PDO($dsn, $user, $pass, $options);
+        } catch (\PDOException $e) {
+            throw new \PDOException($e->getMessage(), (int) $e->getCode());
+        }
 
-    if ($order == 'title') {
-        $seriesData = 'SELECT * FROM series ORDER BY title';
-    } else {
-        $seriesData = 'SELECT * FROM series ORDER BY rating';
+        $formatResult = array();
+
+        $rawResult = $pdo->query($query);
+        while ($row = $rawResult->fetch()) {
+            $rowResult = array();
+
+            foreach ($row as $collum => $value) {
+                $rowResult[$collum] = $value;
+            }
+
+            $formatResult[] = $rowResult;
+        }
+
+        return $formatResult;
     }
-} else {
-    $seriesData = 'SELECT * FROM series';
-}
+    ?>
 
-$seriesQuery= $pdo->query($seriesData);
-$series = $seriesQuery->fetchAll(PDO::FETCH_ASSOC);
+    <h1> Welcome to the netland control panel </h1>
+    <h3> Series <a href="create.php?type=series"> add</a> </h3>
 
-echo "
-<title> Control panel </title>
-<h1> Welcome to the $db control panel </h1>
-<h2> Series </h2>
-<table>
-    <tr>
-        <td style=\"font-weight:bold\"><a href=index.php?seriesOrder=title> Title </a></td>
-        <td style=\"font-weight:bold\"><a href=index.php?seriesOrder=rating> Rating </a></td>
-    </tr>
-";
-foreach ($series as $row) {
-    echo "
-    <tr>
-        <td>$row[title]</td>
-        <td>$row[rating]</td>
-        <td><a href=series.php?id=$row[id]> Details </a></td>
-    </tr> ";
-}
-
-echo "</table>";
-
-if (isset($_GET['moviesOrder'])) {
-    $order = $_GET['moviesOrder'];
-
-    if ($order == 'title') {
-        $moviesData = 'SELECT * FROM movies ORDER BY title';
-    } else {
-        $moviesData = 'SELECT * FROM movies ORDER BY duur';
-    }
-} else {
-    $moviesData = 'SELECT * FROM movies';
-}
+    <table>
+        <thead>
+            <th>Titel</th>
+            <th>Rating</th>
+            <th></th>
+        </thead>
+        <tbody>
+            <?php
+            $rows = select('SELECT * FROM media WHERE serie = true');
+            foreach ($rows as $row) {
+                echo <<<EOT
+                        <tr>
+                            <td>${row['title']}</td>
+                            <td>${row['rating']}</td>
+                            <td><a href="info.php?id=${row['id']}">Meer info</a></td>
+                        </tr>
+                    EOT;
+            }
+            ?>
+        </tbody>
+    </table>
 
 
+    <h3>Films <a href="create.php?type=movies"> add</a></h3>
 
-$moviesQuery= $pdo->query($moviesData);
-$movies = $moviesQuery->fetchAll(PDO::FETCH_ASSOC);
+    <table>
+        <thead>
+            <th>Titel</th>
+            <th>Beoordeling</th>
+            <th></th>
+        </thead>
+        <tbody>
+            <?php
+            $rows = select('SELECT * FROM media WHERE serie = false');
+            foreach ($rows as $row) {
+                echo <<<EOT
+                            <tr>
+                                <td>${row['title']}</td>
+                                <td>${row['rating']}</td>
+                                <td><a href="info.php?id=${row['id']}">Meer info</a></td>
+                            </tr>
+                        EOT;
+            }
+            ?>
+        </tbody>
+    </table>
+</body>
 
-echo "
-<h2> Movies </h2>
-<table>
-    <tr>
-        <td style=\"font-weight:bold\"><a href=index.php?moviesOrder=title> Title </a></td>
-        <td style=\"font-weight:bold\"><a href=index.php?moviesOrder=duration> Duration </a></td>
-    </tr>
-";
-
-foreach ($movies as $row) {
-    echo "
-    <tr>
-        <td>$row[title]</td>
-        <td>$row[duur]</td>
-        <td><a href=films.php?id=$row[id]> Details </a></td>
-    </tr> ";
-}
-
-echo "</table>";
+</html>
